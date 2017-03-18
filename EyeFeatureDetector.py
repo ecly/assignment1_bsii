@@ -94,8 +94,14 @@ class EyeFeatureDetector(object):
         #<!--------------------------------------------------------------------------->
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
-
-        
+        props = RegionProps()
+        for contour in contours:
+            prop = props.calcContourProperties(contour, ["Centroid"])
+            ellipse = cv2.fitEllipse(contour) if (len(contour) > 4) else cv2.minAreaRect(contour)
+            centroid = prop.get("Centroid")
+            ellipses.append(ellipse)
+            centers.append(centroid)
+            
 
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
