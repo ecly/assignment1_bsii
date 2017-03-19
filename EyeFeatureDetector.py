@@ -142,18 +142,14 @@ class EyeFeatureDetector(object):
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
 
-                # Grayscale image.
+        # Grayscale image.
         grayscale = image.copy()
         if len(grayscale.shape) == 3:
             grayscale = cv2.cvtColor(grayscale, cv2.COLOR_BGR2GRAY)
 
-        # Define the minimum and maximum size of the detected blob.
-        glintsMinimum = int(round(math.pi * math.pow(glintsMinimum, 2)))
-        glintsMaximum = int(round(math.pi * math.pow(glintsMaximum, 2)))
-
         # Create a binary image.
         _, thres = cv2.threshold(grayscale, threshold, 255,
-                                 cv2.THRESH_BINARY)
+                                 cv2.THRESH_BINARY)#using binary instead of inv
 
         # Find blobs in the input image.
         _, contours, hierarchy = cv2.findContours(thres, cv2.RETR_LIST,
@@ -161,13 +157,21 @@ class EyeFeatureDetector(object):
         
         props = RegionProps()
         for contour in contours:
-            prop = props.calcContourProperties(contour, ["Centroid", "Area", "Extend"])
+            prop = props.calcContourProperties(contour, ["Centroid", "Area", "Extend", "BoundingBox"])
             ellipse = cv2.fitEllipse(contour) if (len(contour) > 4) else cv2.minAreaRect(contour)
-        
             centroid = prop.get("Centroid")
-            ellipses.append(ellipse)                    
-            centers.append(centroid)                    
-
+            area = prop.get("Area")
+           
+            if (area > 15):#basically disregards noise
+                ellipses.append(ellipse)                    
+                centers.append(centroid)                    
+                
+                
+        #sort based on size, since first index of tuple is the 2 radius
+        ellipses.sort(key=lambda ellipse: math.pi * ellipse[1][0] * ellipse[1][0], reverse=True) 
+        ellipses = ellipses[:numOfGlints]#limit amount
+        centers = map(lambda ellipse: (ellipse[0][0], ellipse[0][1]), ellipses)
+        
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
         #<!--------------------------------------------------------------------------->
