@@ -102,9 +102,9 @@ class EyeFeatureDetector(object):
             prop = props.calcContourProperties(contour, ["Centroid", "Area", "Extend"])
             ellipse = cv2.fitEllipse(contour) if (len(contour) > 4) else cv2.minAreaRect(contour)
             
+            centroid = prop.get("Centroid")
             area = prop.get("Area")
             extend = prop.get("Extend")
-            centroid = prop.get("Centroid")
             if(area > 500 and area < 6000 and extend > 0.5):
                 ellipses.append(ellipse)
                 centers.append(centroid)
@@ -142,7 +142,31 @@ class EyeFeatureDetector(object):
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
 
+                # Grayscale image.
+        grayscale = image.copy()
+        if len(grayscale.shape) == 3:
+            grayscale = cv2.cvtColor(grayscale, cv2.COLOR_BGR2GRAY)
+
+        # Define the minimum and maximum size of the detected blob.
+        glintsMinimum = int(round(math.pi * math.pow(glintsMinimum, 2)))
+        glintsMaximum = int(round(math.pi * math.pow(glintsMaximum, 2)))
+
+        # Create a binary image.
+        _, thres = cv2.threshold(grayscale, threshold, 255,
+                                 cv2.THRESH_BINARY)
+
+        # Find blobs in the input image.
+        _, contours, hierarchy = cv2.findContours(thres, cv2.RETR_LIST,
+                                                  cv2.CHAIN_APPROX_SIMPLE)
         
+        props = RegionProps()
+        for contour in contours:
+            prop = props.calcContourProperties(contour, ["Centroid", "Area", "Extend"])
+            ellipse = cv2.fitEllipse(contour) if (len(contour) > 4) else cv2.minAreaRect(contour)
+        
+            centroid = prop.get("Centroid")
+            ellipses.append(ellipse)                    
+            centers.append(centroid)                    
 
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
