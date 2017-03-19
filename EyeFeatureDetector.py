@@ -24,6 +24,7 @@ import cv2
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.spatial.distance
 
 from GeometricMethods import *
 from RegionProps import RegionProps
@@ -167,8 +168,8 @@ class EyeFeatureDetector(object):
                 centers.append(centroid)                    
                 
                 
-        #sort based on size, since first index of tuple is the 2 radius
-        ellipses.sort(key=lambda ellipse: math.pi * ellipse[1][0] * ellipse[1][0], reverse=True) 
+        #sort on distance to pupil
+        ellipses.sort(key=lambda ellipse: self.__Distance(ellipse[0], pupilCenter)) 
         centers = map(lambda ellipse: (ellipse[0][0], ellipse[0][1]), ellipses)
         numOfGlints = numOfGlints if len(ellipses) >= numOfGlints else len(ellipses)#no more best than found
         bestGlints = [i for i in range (numOfGlints)]#since the returned array is sorted
@@ -295,9 +296,8 @@ class EyeFeatureDetector(object):
         #<!--------------------------------------------------------------------------->
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
-
-        # Remove this command.
-        return 0
+        
+        return scipy.spatial.distance.euclidean(p1, p2)
 
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
