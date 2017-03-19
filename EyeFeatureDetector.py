@@ -95,14 +95,28 @@ class EyeFeatureDetector(object):
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
         props = RegionProps()
+        largestArea = 0
+        areas = list()
+        extends = list()
         for contour in contours:
-            prop = props.calcContourProperties(contour, ["Centroid"])
+            prop = props.calcContourProperties(contour, ["Centroid", "Area", "Extend"])
             ellipse = cv2.fitEllipse(contour) if (len(contour) > 4) else cv2.minAreaRect(contour)
-            centroid = prop.get("Centroid")
-            ellipses.append(ellipse)
-            centers.append(centroid)
             
-
+            area = prop.get("Area")
+            extend = prop.get("Extend")
+            centroid = prop.get("Centroid")
+            if(area > 500 and area < 6000 and extend > 0.5):
+                ellipses.append(ellipse)
+                centers.append(centroid)
+                extends.append(extend)
+                areas.append(area)
+                
+                if (area > largestArea):#define best pupil as largest area
+                    largestArea = area
+                    bestPupil = len(ellipses) - 1
+                    
+        self.__plotData(extends, areas, bestPupil)
+                    
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
         #<!--------------------------------------------------------------------------->
@@ -347,7 +361,7 @@ class EyeFeatureDetector(object):
         # Merge the horizontal and vertical components.
         return cv2.addWeighted(absX, 0.5, absY, 0.5, 0)
 
-    def __plotRegressionData(self, x, y, bestPupil):
+    def __plotData(self, x, y, bestPupil):
         """Plot the regression data based on blob properties."""
         # Check if there are valid regression data.
         if bestPupil == -1:
