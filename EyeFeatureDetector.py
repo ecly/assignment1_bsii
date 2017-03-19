@@ -88,6 +88,11 @@ class EyeFeatureDetector(object):
         _, thres = cv2.threshold(grayscale, threshold, 255,
                                  cv2.THRESH_BINARY_INV)
 
+        #closing the pupil to circumvent glints
+        #kernel = np.ones((5,5), np.uint8)
+        #dilated = cv2.erode(thres, kernel, iterations=1)
+        #eroded = cv2.erode(dilated, kernel, iterations=1)
+        
         # Find blobs in the input image.
         _, contours, hierarchy = cv2.findContours(thres, cv2.RETR_LIST,
                                                   cv2.CHAIN_APPROX_SIMPLE)
@@ -151,7 +156,7 @@ class EyeFeatureDetector(object):
         # Create a binary image.
         _, thres = cv2.threshold(grayscale, threshold, 255,
                                  cv2.THRESH_BINARY)#using binary instead of inv
-
+        
         # Find blobs in the input image.
         _, contours, hierarchy = cv2.findContours(thres, cv2.RETR_LIST,
                                                   cv2.CHAIN_APPROX_SIMPLE)
@@ -199,8 +204,10 @@ class EyeFeatureDetector(object):
         #<!--------------------------------------------------------------------------->
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
-
-        
+        maxVals = []
+        for vals in circle:
+            max = self.__FindMaxGradientValueOnNormal(magnitude, orientation, pupilCenter, (vals[0][0], vals[0][1]))
+            maxVals.append(vals)
 
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
@@ -321,9 +328,14 @@ class EyeFeatureDetector(object):
         #<!--------------------------------------------------------------------------->
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
-
+        maxVal = -1
+        index = -1
+        for index,val in enumerate(normalVals):
+            if val > maxVal:
+                index = index
+                maxVal = val
         
-
+        maxPoint = points[index]
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
         #<!--------------------------------------------------------------------------->
@@ -349,8 +361,12 @@ class EyeFeatureDetector(object):
         #<!--------------------------------------------------------------------------->
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
-
+        sobelx = cv2.Sobel(grayscale, cv2.CV_64F, 1, 0, ksize=5)
+        sobely = cv2.Sobel(grayscale, cv2.CV_64F, 0, 1, ksize=5)
         
+        gradient = np.gradient(grayscale)
+        magnitude = cv2.magnitude(sobelx, sobely)
+        orientation = cv2.phase(sobelx, sobely)
 
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
