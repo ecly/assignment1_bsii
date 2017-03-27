@@ -74,8 +74,40 @@ class SkinColorDetector(object):
         #<!--------------------------------------------------------------------------->
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
-
         
+        faces = self.__cascade.detectMultiScale(grayscale, 1.3, 3)
+        
+        # create a mask
+        mask = np.zeros(image.shape[:2], np.uint8)  
+        (x,y,w,h) = faces[0]
+        mask[y:y+h, x:x+w] = np.uint8(255)
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            
+        histR = cv2.calcHist([image], [0], mask, [256], [0,256])
+        histG = cv2.calcHist([image], [1], mask, [256], [0,256])
+        histB = cv2.calcHist([image], [2], mask, [256], [0,256])
+        
+        hist = np.array([histR,histG,histB])
+        hist = np.transpose(hist)
+        
+        hist = self.__getHistogramImage(hist[0], (255,255))
+        
+        faceImage = cv2.bitwise_and(image, image, mask = mask)
+        hsv_face = cv2.cvtColor(faceImage, cv2.COLOR_BGR2HSV)
+        
+        h,s,v = cv2.split(hsv_image)
+        hFace,sFace,vFace = cv2.split(hsv_face)
+        
+        hValue,th1 = cv2.threshold(h,0,179,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        sValue,th2 = cv2.threshold(s,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        vValue,th3 = cv2.threshold(v,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        
+        hRet,threshH= cv2.threshold(h,hValue,179,cv2.THRESH_BINARY)
+        sRet,threshS = cv2.threshold(s,sValue,255,cv2.THRESH_BINARY)
+        vRet,threshV = cv2.threshold(v,vValue,255,cv2.THRESH_BINARY)
+        
+        skin = cv2.merge((threshH,threshS,threshV))
+        skin = cv2.cvtColor(skin, cv2.COLOR_HSV2BGR)
 
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
