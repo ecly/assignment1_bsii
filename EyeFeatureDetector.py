@@ -136,6 +136,10 @@ class EyeFeatureDetector(object):
         # Correct the number of glints.
         if numOfGlints < 1:
             numOfGlints = 1
+            
+        # Define the minimum and maximum size of the detected blob.
+        glintsMinimum = int(round(math.pi * math.pow(glintsMinimum, 2)))
+        glintsMaximum = int(round(math.pi * math.pow(glintsMaximum, 2)))
 
         # Create the output variable.
         bestGlints= [-1] * numOfGlints
@@ -155,6 +159,9 @@ class EyeFeatureDetector(object):
         _, thres = cv2.threshold(grayscale, threshold, 255,
                                  cv2.THRESH_BINARY)#using binary instead of inv
         
+        kernel = np.ones((5,5), np.uint8)
+        thres = cv2.morphologyEx(thres, cv2.MORPH_OPEN, kernel)
+        
         # Find blobs in the input image.
         _, contours, hierarchy = cv2.findContours(thres, cv2.RETR_LIST,
                                                   cv2.CHAIN_APPROX_SIMPLE)
@@ -166,7 +173,7 @@ class EyeFeatureDetector(object):
             centroid = prop.get("Centroid")
             area = prop.get("Area")
            
-            if (area > 15):#basically disregards noise
+            if (area > glintsMinimum):#basically disregards noise
                 ellipses.append(ellipse)                    
                 centers.append(centroid)                    
                 
