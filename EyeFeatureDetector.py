@@ -87,11 +87,9 @@ class EyeFeatureDetector(object):
         # Create a binary image.
         _, thres = cv2.threshold(grayscale, threshold, 255,
                                  cv2.THRESH_BINARY_INV)
-
-        #closing the pupil to circumvent glints
-        #kernel = np.ones((5,5), np.uint8)
-        #dilated = cv2.erode(thres, kernel, iterations=1)
-        #eroded = cv2.erode(dilated, kernel, iterations=1)
+        
+        kernel = np.ones((20,20), np.uint8)
+        thres = cv2.morphologyEx(thres, cv2.MORPH_CLOSE, kernel)
         
         # Find blobs in the input image.
         _, contours, hierarchy = cv2.findContours(thres, cv2.RETR_LIST,
@@ -111,7 +109,7 @@ class EyeFeatureDetector(object):
             centroid = prop.get("Centroid")
             area = prop.get("Area")
             extend = prop.get("Extend")
-            if(area > 500 and area < 6000 and extend > 0.5):
+            if(area > pupilMinimum and area < pupilMaximum and extend > 0.5):
                 ellipses.append(ellipse)
                 centers.append(centroid)
                 extends.append(extend)
