@@ -199,16 +199,26 @@ class EyeFeatureDetector(object):
         gradient, orientation, magnitude = self.__GetGradientInfo(image)
 
         # Get the points distribuition around one circle.
-        circle = getCircleSamples(pupilCenter, pupilRadius, numOfPoints)
+        circle = getCircleSamples(pupilCenter, pupilRadius * 2, numOfPoints)
     
         #<!--------------------------------------------------------------------------->
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
         maxVals = []
         for vals in circle:
-            max = self.__FindMaxGradientValueOnNormal(magnitude, orientation, pupilCenter, (vals[0][0], vals[0][1]))
-            maxVals.append(vals)
-
+            point = (vals[0][0], vals[0][1])
+            direction = (point[0] - pupilCenter[0],point[1] - pupilCenter[1])
+            length = math.sqrt(math.pow(direction[0], 2) + math.pow(direction[1], 2))
+            direction = (direction[0] / length, direction[1] / length)#normalised
+            scaledRadius = 1.3 * pupilRadius;# to ensure point is moved away from pupil entirely
+            movedPupilCenter = (pupilCenter[0] + direction[0] * scaledRadius, pupilCenter[1] + direction[1] * scaledRadius)
+            
+            max = self.__FindMaxGradientValueOnNormal(magnitude, orientation, movedPupilCenter, (vals[0][0], vals[0][1]))
+            maxVals.append(max)
+            
+        points = np.asarray(maxVals)
+        
+        ellipse = cv2.fitEllipse(points)
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
         #<!--------------------------------------------------------------------------->
@@ -328,13 +338,22 @@ class EyeFeatureDetector(object):
         #<!--------------------------------------------------------------------------->
         #<!--                            YOUR CODE HERE                             -->
         #<!--------------------------------------------------------------------------->
+        curveNormal = (p2[0]-p1[0], p2[1]-p1[1])#direction from center of pupil to periphery point
+        curveNormalLen = math.sqrt(math.pow(curveNormal[0], 2) + math.pow(curveNormal[1], 2))
+        curveNormalNormalised = (curveNormal[0] / curveNormalLen, curveNormal[1] / curveNormalLen)
+        curveDirectionInDegrees = math.atan2(curveNormalNormalised[0], curveNormalNormalised[1]) * 180 / math.pi
+        
         maxVal = -1
         index = -1
-        for index,val in enumerate(normalVals):
-            if val > maxVal:
-                index = index
-                maxVal = val
-        
+        for i,val in enumerate(normalVals):
+            if val >= maxVal:
+                point = points[i]
+                if (point[0] < len(orientation) and point[1] < len(orientation[0])):
+                    currentOrientation = orientation[point[0]][point[1]]
+                    if (abs(currentOrientation - curveDirectionInDegrees) < 50):
+                        index = i
+                        maxVal = val
+            
         maxPoint = points[index]
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
@@ -366,7 +385,7 @@ class EyeFeatureDetector(object):
         
         gradient = np.gradient(grayscale)
         magnitude = cv2.magnitude(sobelx, sobely)
-        orientation = cv2.phase(sobelx, sobely)
+        orientation = cv2.phase(sobelx, sobely, angleInDegrees=True)
 
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
