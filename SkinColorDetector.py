@@ -77,10 +77,17 @@ class SkinColorDetector(object):
         
         faces = self.__cascade.detectMultiScale(grayscale, 1.3, 3)
         
-        # create a mask
-        mask = np.zeros(image.shape[:2], np.uint8)  
-        (x,y,w,h) = faces[0]
+        # create an all black mask
+        mask = np.zeros(image.shape[:2], np.uint8)
+        
+        if faces == ():
+            (x,y,w,h) = (0,0,0,0)
+        else:
+            (x,y,w,h) = faces[0]
+            
+        # fill the face area with white
         mask[y:y+h, x:x+w] = np.uint8(255)
+        
         hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
             
         histR = cv2.calcHist([image], [0], mask, [256], [0,256])
@@ -106,8 +113,14 @@ class SkinColorDetector(object):
         sRet,threshS = cv2.threshold(s,sValue,255,cv2.THRESH_BINARY)
         vRet,threshV = cv2.threshold(v,vValue,255,cv2.THRESH_BINARY)
         
-        skin = cv2.merge((threshH,threshS,threshV))
-        skin = cv2.cvtColor(skin, cv2.COLOR_HSV2BGR)
+        # create an all black mask
+        blackMask = np.zeros(image.shape[:2], np.uint8)  
+        whiteMask = cv2.bitwise_not(blackMask)
+        
+        testInv = cv2.bitwise_not(threshH)
+        someValue, testInvBW = cv2.threshold(testInv,127,255,cv2.THRESH_BINARY)
+        skin = cv2.bitwise_and(image, image, mask = testInvBW)
+        
 
         #<!--------------------------------------------------------------------------->
         #<!--                                                                       -->
