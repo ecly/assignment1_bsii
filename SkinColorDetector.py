@@ -102,24 +102,21 @@ class SkinColorDetector(object):
         faceImage = cv2.bitwise_and(image, image, mask = mask)
         hsv_face = cv2.cvtColor(faceImage, cv2.COLOR_BGR2HSV)
         
+        # Split the HSV image into three channels
         h,s,v = cv2.split(hsv_image)
-        hFace,sFace,vFace = cv2.split(hsv_face)
+        hF,sF,vF = cv2.split(hsv_face)
         
-        hValue,th1 = cv2.threshold(h,0,179,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-        sValue,th2 = cv2.threshold(s,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-        vValue,th3 = cv2.threshold(v,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        # Use auto thresholding on the Hue channel of the face image
+        hValue,th1 = cv2.threshold(hF,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+         
+        # Apply binary threshold on the Hue channel of the entire image, with the value optained above
+        hRet,threshH= cv2.threshold(h,hValue,255,cv2.THRESH_BINARY)
         
-        hRet,threshH= cv2.threshold(h,hValue,179,cv2.THRESH_BINARY)
-        sRet,threshS = cv2.threshold(s,sValue,255,cv2.THRESH_BINARY)
-        vRet,threshV = cv2.threshold(v,vValue,255,cv2.THRESH_BINARY)
+        # Invert the skin mask      
+        skinMask = cv2.bitwise_not(threshH)
         
-        # create an all black mask
-        blackMask = np.zeros(image.shape[:2], np.uint8)  
-        whiteMask = cv2.bitwise_not(blackMask)
-        
-        testInv = cv2.bitwise_not(threshH)
-        someValue, testInvBW = cv2.threshold(testInv,127,255,cv2.THRESH_BINARY)
-        skin = cv2.bitwise_and(image, image, mask = testInvBW)
+        # Apply the skin mask to the original image
+        skin = cv2.bitwise_and(image, image, mask = skinMask)
         
 
         #<!--------------------------------------------------------------------------->

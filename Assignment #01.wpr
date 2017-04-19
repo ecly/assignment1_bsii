@@ -89,6 +89,6 @@ proj.launch-config = {loc('ex1.py'): ('project',
                                       (u'-i "eye05.m4v" -o "Ex05_A01.mp4"',
                                        '')),
                       loc('ex6.py'): ('project',
-                                      (u'--cascade "Inputs/xml/haarcascade_frontalface_default.xml" --output "Ex06_E02.m4v" --input tyson.jpg',
+                                      (u'--cascade "Inputs/xml/haarcascade_frontalface_default.xml" --output "Ex06_E02.m4v" --input zooey.jpg',
                                        ''))}
 proj.main-file = loc('ex6.py')
