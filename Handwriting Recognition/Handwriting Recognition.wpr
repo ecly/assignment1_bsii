@@ -1,5 +1,5 @@
 #!wing
-#!version=5.0
+#!version=6.0
 ##################################################################
 # Wing IDE project file                                          #
 ##################################################################
@@ -12,7 +12,7 @@ proj.directory-list = [{'dirloc': loc('.'),
                         'watch_for_changes': True}]
 proj.file-type = 'shared'
 proj.launch-config = {loc('classify.py'): ('project',
-        (u'--model models/svm.cpickle --scene_video images/out_scene.mp4 --eye_video images/out_eye.mp4',
+        (u'--model models/svm.cpickle --scene_video images/scene_scenario_1.mp4 --eye_video images/eye_scenario_1.mp4',
          '')),
                       loc('train.py'): ('project',
         (u'--dataset data/digits.csv --model models/svm.cpickle',

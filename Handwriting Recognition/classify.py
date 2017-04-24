@@ -39,10 +39,10 @@ def callback(value):
 def setup_roibars(ImageShape):
 	cv2.namedWindow("ROIBars", 0)
 
-	cv2.createTrackbar("Left", "ROIBars", 0, ImageShape[0], callback)
-	cv2.createTrackbar("Right", "ROIBars", 0, ImageShape[0], callback)    
-	cv2.createTrackbar("Up", "ROIBars", 0, ImageShape[1], callback)
-	cv2.createTrackbar("Down", "ROIBars", 0, ImageShape[1], callback)
+	cv2.createTrackbar("Left", "ROIBars", 0, ImageShape[1], callback)
+	cv2.createTrackbar("Right", "ROIBars", 0, ImageShape[1], callback)    
+	cv2.createTrackbar("Up", "ROIBars", 0, ImageShape[0], callback)
+	cv2.createTrackbar("Down", "ROIBars", 0, ImageShape[0], callback)
 	cv2.createTrackbar("Pause", "ROIBars", 0, 1, callback)
 
 def get_roibar_values():
@@ -98,10 +98,10 @@ while(True):
 
 	# draw ROI
 	result = eye_image.copy()
-	cv2.line(result, (XMin, 0), (XMin, result.shape[1]), [255,255,255], thickness=1)
-	cv2.line(result, (XMax, 0), (XMax, result.shape[1]), [255,255,255], thickness=1)
-	cv2.line(result, (0, YMin), (result.shape[0], YMin), [255,255,255], thickness=1)
-	cv2.line(result, (0, YMax), (result.shape[0], YMax), [255,255,255], thickness=1)	
+	cv2.line(result, (XMin, 0), (XMin, result.shape[0]), [255,255,255], thickness=1)
+	cv2.line(result, (XMax, 0), (XMax, result.shape[0]), [255,255,255], thickness=1)
+	cv2.line(result, (0, YMin), (result.shape[1], YMin), [255,255,255], thickness=1)
+	cv2.line(result, (0, YMax), (result.shape[1], YMax), [255,255,255], thickness=1)	
 
 	if grabFlag:
 		# crop image
@@ -151,8 +151,8 @@ while(True):
 				#<------------------------------------------------------------>				
 				
 				# extract features from the image and classify it
-
-
+				#features = hog.describe(thresh)
+				#model.predict(features)
 		
 				# draw a rectangle around the digit, the show what the digit was classified as
 				
@@ -174,4 +174,3 @@ while(True):
 # When everything done, release the capture
 cap.release()
 cv2.destroyAllWindows()
-		
