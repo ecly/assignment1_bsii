@@ -14,6 +14,7 @@ import argparse
 import mahotas
 import cv2
 import pickle
+from RegionProps import RegionProps
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -131,7 +132,19 @@ while(True):
 		for (c, _) in cnts:
 			# compute the bounding box for the rectangle
 			(x, y, w, h) = cv2.boundingRect(c)
-		
+			
+			#filtering
+			area = w * h
+			if area > 17000:#value tested
+				continue
+			
+			#can this be used for removed some contours
+			roi = scene_image(Rect(x, y, w, h))
+			whites = cv2.inRange(roi, (0,0,0), (40,40,40))
+			blacks = cv2.inRange(roi, (210,210, 210), (255,255,255))
+			
+			#We can test the color of this particual part
+
 			# if the width is at least 7 pixels and the height is at least 20 pixels, the contour
 			# is likely a digit
 			if w >= 7 and h >= 20:
@@ -157,7 +170,6 @@ while(True):
 				prediction = str(prediction[0])
 				
 				# draw a rectangle around the digit, the show what the digit was classified as
-				x,y,w,h = cv2.boundingRect(c)#get bounding rect for contour
 				cv2.rectangle(scene_image, (x,y), (x+w, y+h), (255,0,0))#draw the rect
 				cv2.putText(scene_image, prediction, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))#draw text on image
 				
