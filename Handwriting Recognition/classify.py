@@ -151,16 +151,19 @@ while(True):
 				#<------------------------------------------------------------>				
 				
 				# extract features from the image and classify it
-				#features = hog.describe(thresh)
-				#model.predict(features)
-		
-				# draw a rectangle around the digit, the show what the digit was classified as
+				features = hog.describe(thresh)
+				features = features.reshape(1, -1)#reshape for prediction
+				prediction = model.predict(features)
+				prediction = str(prediction[0])
 				
+				# draw a rectangle around the digit, the show what the digit was classified as
+				x,y,w,h = cv2.boundingRect(c)#get bounding rect for contour
+				cv2.rectangle(scene_image, (x,y), (x+w, y+h), (255,0,0))#draw the rect
+				cv2.putText(scene_image, prediction, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))#draw text on image
 				
 				#<------------------------------------------------------------>
 				#<                                                            >
 				#<------------------------------------------------------------>				
-				
 		
 		cv2.circle(scene_image, (int(gaze_point[0]), int(gaze_point[1])), 15, (255, 0, 0), -1)
 	if not grabFlag:
