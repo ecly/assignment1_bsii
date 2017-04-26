@@ -133,22 +133,8 @@ while(True):
 			# compute the bounding box for the rectangle
 			x, y, w, h = cv2.boundingRect(c)
 			
-			#extract the image roi
-			roi = gray[x:x+w, y:y+h].copy()
-			whites = cv2.inRange(roi, 0, 70)
-			blacks = cv2.inRange(roi, 185 , 255)
-			count = 0
-			if whites is not None:
-				m, n = whites.shape
-				count += m * n
-			if blacks is not None:
-				m1, n1 = blacks.shape
-				count += m1 * n1
-				
-			#if image isn't primarily our above thresholded blacks and whites
-			#or if the area is simply too large, continue
-			area = w * h
-			if (count < area * 0.5 or area > 20000):
+			#if huge ROI, discard
+			if (w * h > 20000):
 				continue
 			
 			#We can test the color of this particual part
@@ -170,12 +156,21 @@ while(True):
 				#<------------------------------------------------------------>
 				#<---------- Describe HOG features and Classify Digit -------->
 				#<------------------------------------------------------------>				
-				
 				# extract features from the image and classify it
 				features = hog.describe(thresh)
 				features = features.reshape(1, -1)#reshape for prediction
 				prediction = model.predict(features)
 				prediction = str(prediction[0])
+				
+				#if it's not predicting 1, and we do not have a lot of bright pixels, throw away
+				if (prediction != "1"):
+					threshcopy = roi.copy()
+					threshcopy[threshcopy < 200] = 0
+					w1, h1 = thresh.shape
+					nonZero = cv2.countNonZero(threshcopy)
+					if (nonZero < 0.8 * w1 * h1):
+						continue
+					
 				
 				# draw a rectangle around the digit, the show what the digit was classified as
 				cv2.rectangle(scene_image, (x,y), (x+w, y+h), (255,0,0))#draw the rect
