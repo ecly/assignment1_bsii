@@ -131,17 +131,25 @@ while(True):
 		# loop over the contours
 		for (c, _) in cnts:
 			# compute the bounding box for the rectangle
-			(x, y, w, h) = cv2.boundingRect(c)
+			x, y, w, h = cv2.boundingRect(c)
 			
-			#filtering
+			#extract the image roi
+			roi = gray[x:x+w, y:y+h].copy()
+			whites = cv2.inRange(roi, 0, 70)
+			blacks = cv2.inRange(roi, 185 , 255)
+			count = 0
+			if whites is not None:
+				m, n = whites.shape
+				count += m * n
+			if blacks is not None:
+				m1, n1 = blacks.shape
+				count += m1 * n1
+				
+			#if image isn't primarily our above thresholded blacks and whites
+			#or if the area is simply too large, continue
 			area = w * h
-			if area > 17000:#value tested
+			if (count < area * 0.5 or area > 20000):
 				continue
-			
-			#can this be used for removed some contours
-			roi = scene_image(Rect(x, y, w, h))
-			whites = cv2.inRange(roi, (0,0,0), (40,40,40))
-			blacks = cv2.inRange(roi, (210,210, 210), (255,255,255))
 			
 			#We can test the color of this particual part
 
