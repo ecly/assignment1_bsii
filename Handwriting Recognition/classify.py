@@ -3,6 +3,7 @@
 
 # import the necessary packages
 from __future__ import print_function
+from scipy.spatial import distance
 from sklearn.externals import joblib
 from DataAndDescription.descriptors import HOG
 from DataAndDescription.utils import dataset
@@ -128,6 +129,9 @@ while(True):
 		# left to right
 		cnts = sorted([(c, cv2.boundingRect(c)[0]) for c in cnts], key=lambda x: x[1])
 		
+		finalDistance = 99999999999
+		finalPrediction = ""
+		boxx = boxxy = boxw = boxh = 0
 		# loop over the contours
 		for (c, _) in cnts:
 			# compute the bounding box for the rectangle
@@ -171,7 +175,16 @@ while(True):
 					if (nonZero < 0.8 * w1 * h1):
 						continue
 					
-				
+				#save the contour and its values if its the closest to the gaze point
+				dist = distance.euclidean((x + 0.5 * w, y + 0.5 * h), gaze_point[:2])
+				if (dist < finalDistance):
+					gazeDistance = dist
+					gazePrediction = prediction
+					boxx = x
+					boxy = y
+					boxh = h
+					boxw = w
+					
 				# draw a rectangle around the digit, the show what the digit was classified as
 				cv2.rectangle(scene_image, (x,y), (x+w, y+h), (255,0,0))#draw the rect
 				cv2.putText(scene_image, prediction, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))#draw text on image
