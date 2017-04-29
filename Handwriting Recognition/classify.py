@@ -15,6 +15,7 @@ import argparse
 import mahotas
 import cv2
 import pickle
+import time
 from RegionProps import RegionProps
 
 # construct the argument parse and parse the arguments
@@ -84,7 +85,6 @@ ret_scene, scene_image = cap_scene.read()
 
 roibarFlag = True
 grabFlag = False
-
 while(True):
 	# Capture frame-by-frame
 	if grabFlag:
@@ -95,9 +95,14 @@ while(True):
 		setup_roibars(eye_image.shape[:2])
 		roibarFlag = False    
 
+	#break out of loop if out of video
+	if eye_image is None or scene_image is None:
+		break
+	
 	# draw ROI lines
 	XMin, XMax, YMin, YMax, grabFlag = get_roibar_values()
 
+	
 	# draw ROI
 	result = eye_image.copy()
 	cv2.line(result, (XMin, 0), (XMin, result.shape[0]), [255,255,255], thickness=1)
@@ -129,7 +134,7 @@ while(True):
 		# left to right
 		cnts = sorted([(c, cv2.boundingRect(c)[0]) for c in cnts], key=lambda x: x[1])
 		
-		finalDistance = 99999999999
+		gazeDistance = 9999999999999999999
 		finalPrediction = ""
 		boxx = boxxy = boxw = boxh = 0
 		# loop over the contours
@@ -138,7 +143,7 @@ while(True):
 			x, y, w, h = cv2.boundingRect(c)
 			
 			#if huge ROI, discard
-			if (w * h > 20000):
+			if (w * h > 35000):
 				continue
 			
 			#We can test the color of this particual part
@@ -177,23 +182,19 @@ while(True):
 					
 				#save the contour and its values if its the closest to the gaze point
 				dist = distance.euclidean((x + 0.5 * w, y + 0.5 * h), gaze_point[:2])
-				if (dist < finalDistance):
+				if (dist < gazeDistance):
 					gazeDistance = dist
 					gazePrediction = prediction
 					boxx = x
 					boxy = y
 					boxh = h
 					boxw = w
-					
-				# draw a rectangle around the digit, the show what the digit was classified as
-				cv2.rectangle(scene_image, (x,y), (x+w, y+h), (255,0,0))#draw the rect
-				cv2.putText(scene_image, prediction, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))#draw text on image
 				
-				#<------------------------------------------------------------>
-				#<                                                            >
-				#<------------------------------------------------------------>				
-		
+		# draw a rectangle around the digit, the show what the digit was classified as
+		cv2.rectangle(scene_image, (boxx,boxy), (boxx+boxw, boxy+boxh), (0,0,255))#draw the rect
+		cv2.putText(scene_image, gazePrediction, (boxx,boxy), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))#draw text on image
 		cv2.circle(scene_image, (int(gaze_point[0]), int(gaze_point[1])), 15, (255, 0, 0), -1)
+		
 	if not grabFlag:
 		cv2.imshow("Full Eye Frame", result)
 	if grabFlag:
@@ -201,7 +202,8 @@ while(True):
 		cv2.imshow("Full Eye Frame", eye_image)
 	cv2.imshow("Detected Digits", scene_image)
 	cv2.waitKey(1)
-
+	
 # When everything done, release the capture
-cap.release()
+cap_eye.release()
+cap_scene.release()
 cv2.destroyAllWindows()

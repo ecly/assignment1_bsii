@@ -38,8 +38,8 @@ def DetectPupil(cropped_frame):
     _, thres = cv2.threshold(grayscale, threshold, 255,
                                  cv2.THRESH_BINARY_INV)
 
-    #kernel = np.ones((20,20), np.uint8)
-    #thres = cv2.morphologyEx(thres, cv2.MORPH_CLOSE, kernel)
+    kernel = np.ones((6,6), np.uint8)
+    thres = cv2.morphologyEx(thres, cv2.MORPH_CLOSE, kernel)
 
     # Find blobs in the input image.
     _, contours, hierarchy = cv2.findContours(thres, cv2.RETR_LIST,
