@@ -105,15 +105,23 @@ class Assignment2(object):
 
         # Load tracking data.
         dataFile = np.loadtxt(self.__path + "Inputs/trackingdata.dat")
-        lenght   = dataFile.shape[0]
+        length   = dataFile.shape[0]
 
         # Define the boxes colors.
         boxColors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)] # BGR.
 
         # Read each frame from input video and draw the rectangules on it.
-        for i in range(lenght):
+        first = True
+        homography = None
+        for i in range(length):
             # Read the current image from a video file.
             image = SIGBTools.read()
+            
+            # Estimate the homograhy based on first frame
+            if first:
+                itumap = cv2.imread(self.__path + "Images/ITUMap.png")
+                homography = SIGBTools.GetHomographyFromMouse(image, itumap)
+                first = False
 
             # Draw each color rectangule in the image.
             boxes = SIGBTools.FrameTrackingData2BoxData(dataFile[i, :])
