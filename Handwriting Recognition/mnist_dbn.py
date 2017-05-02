@@ -3,7 +3,7 @@
 
 # import the necessary packages
 from __future__ import print_function
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from DataAndDescription.utils import dataset
 from sklearn import datasets
@@ -43,14 +43,19 @@ flattened_data = np.array(flattened_data)
 # 28 x 28 grayscale images), 300 hidden units, and 10 output units (one for
 # each of the possible output classifications)
 dbn = DBN(
-    [trainData.shape[1], 300, 10],
+    [trainData.shape[1], 200, 10],
     learn_rates=0.3,
     learn_rate_decays=0.9,
     epochs=10,
     verbose=1)
 
 # train the model
-losses_fine_tune, errors_fine_tune, epochs = dbn.fit(trainData, trainLabels)
+dbn.fit(trainData, trainLabels)
+
+losses_fine_tune = dbn.losses_fine_tune_
+errors_fine_tune = dbn.errors_fine_tune_
+epochs = dbn.epochs
+
 epochs = np.arange(1, epochs + 1)
 
 # plot error decrement through the epochs
