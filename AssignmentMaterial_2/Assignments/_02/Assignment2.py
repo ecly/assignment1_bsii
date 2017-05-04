@@ -102,6 +102,7 @@ class Assignment2(object):
         # Load videodata.
         filename = self.__path + "Videos/ITUStudent.avi"
         SIGBTools.VideoCapture(filename, SIGBTools.CAMERA_VIDEOCAPTURE_640X480)
+        
 
         # Load tracking data.
         dataFile = np.loadtxt(self.__path + "Inputs/trackingdata.dat")
@@ -109,36 +110,72 @@ class Assignment2(object):
 
         # Define the boxes colors.
         boxColors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)] # BGR.
-
+        outputSize = (1280, 960)
+        recorder = SIGBTools.RecordingVideos(self.__path + "Outputs/MapLocation.wmv", size = outputSize)
+        
+        dataPoints = list()
         # Read each frame from input video and draw the rectangules on it.
         first = True
         homography = None
+        itumap = cv2.imread(self.__path + "Images/ITUMap.png")
         for i in range(length):
             # Read the current image from a video file.
             image = SIGBTools.read()
             
             # Estimate the homograhy based on first frame
             if first:
-                itumap = cv2.imread(self.__path + "Images/ITUMap.png")
-                homography = SIGBTools.GetHomographyFromMouse(image, itumap)
+                h, _ = SIGBTools.GetHomographyFromMouse(image, itumap)
+                homography = h
                 first = False
+                np.save('homography1.npy', homography)
 
             # Draw each color rectangule in the image.
             boxes = SIGBTools.FrameTrackingData2BoxData(dataFile[i, :])
+            
+            # Transform center of the feet box - box1 is feet box
+            box1 = boxes[1][0]
+            box2 = boxes[1][1]
+            center = [(box1[0] + 0.5 * (box2[0] - box1[0])), (box1[1] + 0.5 * (box2[1] - box1[1]))]
+            # Reshape the center to be as expected
+            center = np.array([center], dtype=np.float32)
+            center = np.array([center])
+            transformedCenter = cv2.perspectiveTransform(center, homography)
+            dataPoints.append(transformedCenter)
+            
             for j in range(3):
                 box = boxes[j]
                 cv2.rectangle(image, box[0], box[1], boxColors[j])
 
             # Show the final processed image.
+            #Draw current position
+            c = transformedCenter[0][0]
+            itumapCopy = itumap.copy()
+            cv2.circle(itumapCopy, (int(c[0]), int(c[1])), 1, (0, 255, 0), -1)
+            cv2.imshow("ITU Map", itumapCopy)
+            
             cv2.imshow("Ground Floor", image)
+            
+            height, width, _ = image.shape
+            resizedMap = cv2.resize(itumapCopy, (width, height))# resize to same dimensions
+            sideBySide = np.concatenate((image, resizedMap), axis = 0)
+            output = cv2.resize(sideBySide, outputSize)
+            SIGBTools.write(output)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
         # Wait 2 seconds before finishing the method.
         cv2.waitKey(2000)
+        
+        imageMap = itumap.copy()
+        for point in dataPoints:
+            p = point[0][0]#due to point being wrapped
+            cv2.circle(imageMap, (int(p[0]), int(p[1])), 1, (0, 255, 0), -1)
 
+        cv2.imwrite(self.__path + "Outputs/mapImage.png", imageMap)
+        
         # Close all allocated resources.
         cv2.destroyAllWindows()
+        SIGBTools.close()
         SIGBTools.release()
 
     def __TextureMapGroundFloor(self):
