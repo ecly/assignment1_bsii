@@ -183,6 +183,8 @@ class Assignment2(object):
         # Load videodata.
         filename = self.__path + "Videos/ITUStudent.avi"
         SIGBTools.VideoCapture(filename, SIGBTools.CAMERA_VIDEOCAPTURE_640X480)
+        outputSize = (640, 480)
+        recorder = SIGBTools.RecordingVideos(self.__path + "Outputs/TextureMapGroundFloor.wmv", size = outputSize)
 
         # Load tracking data.
         dataFile = np.loadtxt(self.__path + "Inputs/trackingdata.dat")
@@ -190,35 +192,53 @@ class Assignment2(object):
 
         # Define the boxes colors.
         boxColors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)] # BGR.
-
+        
+        homography = None
+        overlay = None
+        itulogo = cv2.imread(self.__path + "Images/ITULogo.png")
         # Read each frame from input video and draw the rectangules on it.
         for i in range(lenght):
             # Read the current image from a video file.
             image = SIGBTools.read()
-
+            if homography is None:
+                h, _ = SIGBTools.GetHomographyFromMouse(itulogo, image, -4)
+                homography = h
+                np.save('homography2.npy', homography) 
+                h, w = image.shape[0:2]
+                overlay = cv2.warpPerspective(itulogo, homography, (w, h))
+                
+            image = cv2.addWeighted(image, 0.8, overlay, 0.2, 0)
+            
             # Draw each color rectangule in the image.
             boxes = SIGBTools.FrameTrackingData2BoxData(dataFile[i, :])
             for j in range(3):
                 box = boxes[j]
                 cv2.rectangle(image, box[0], box[1], boxColors[j])
 
+            imagecopy = image.copy()
+            imagecopy = cv2.resize(imagecopy, outputSize)
+            SIGBTools.write(imagecopy)
             # Show the final processed image.
             cv2.imshow("Ground Floor", image)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
+            
 
         # Wait 2 seconds before finishing the method.
         cv2.waitKey(2000)
 
         # Close all allocated resources.
         cv2.destroyAllWindows()
+        SIGBTools.close()
         SIGBTools.release()
 
     def __TextureMapGridSequence(self):
         """Skeleton for texturemapping on a video sequence."""
         # Load videodata.
-        filename = self.__path + "Videos/Grid01.mp4"
+        filename = self.__path + "Videos/Grid05.mp4"
         SIGBTools.VideoCapture(filename, SIGBTools.CAMERA_VIDEOCAPTURE_640X480)
+        outputSize = (1280, 720)
+        recorder = SIGBTools.RecordingVideos(self.__path + "Outputs/TextureMapGridSequence_Grid05.wmv", size = outputSize)
 
         # Load texture mapping image.
         texture = cv2.imread(self.__path + "Images/ITULogo.png")
@@ -227,8 +247,10 @@ class Assignment2(object):
         # Define the number and ids of inner corners per a chessboard row and column.
         patternSize = (9, 6)
         idx = [0, 8, 45, 53]
-
+        
         # Read each frame from input video.
+        h, w = texture.shape[0:2]
+        textureCorners = np.asarray([[0,h], [0,0], [w,h], [w,0]])
         while True:
             # Read the current image from a video file.
             image = SIGBTools.read()
@@ -236,10 +258,19 @@ class Assignment2(object):
             image = cv2.pyrDown(image)
 
             # Finds the positions of internal corners of the chessboard.
-            corners = SIGBTools.FindCorners(image)
+            corners = SIGBTools.FindCorners(image, False)
             if corners is not None:
                 pass
-
+                corners = np.asarray([corners[idx[0]], corners[idx[1]], corners[idx[2]], corners[idx[3]]])
+                homography, _ = cv2.findHomography(textureCorners, corners)
+                h, w = image.shape[0:2]
+                overlay = cv2.warpPerspective(texture, homography, (w, h))
+                image = cv2.addWeighted(image, 0.5, overlay, 0.5, 0)
+            
+                
+            imagecopy = image.copy()
+            imagecopy = cv2.resize(imagecopy, outputSize)
+            SIGBTools.write(imagecopy)
             # Show the final processed image.
             cv2.imshow("Image", image)
             if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -250,6 +281,7 @@ class Assignment2(object):
 
         # Close all allocated resources.
         cv2.destroyAllWindows()
+        SIGBTools.close()
         SIGBTools.release()
 
     def __RealisticTextureMap(self):
