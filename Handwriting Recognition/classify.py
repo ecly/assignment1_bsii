@@ -17,6 +17,7 @@ import cv2
 import pickle
 import time
 from RegionProps import RegionProps
+from RecordVideo.RecordVideo import RecordVideo
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -28,9 +29,19 @@ args = vars(ap.parse_args())
 
 
 # --- load calibration matrix
+
 filepath = "CalibrationMatrix/matrix_scenario_1.pkl"
-fileStream = open(filepath, "rb")
+
+fileStream = open(filepath, "r")
+
+a=pickle.load(fileStream)
+
+pickle.dump(a, open(filepath+'_bin', 'wb'))
+
+fileStream = open(filepath + '_bin', "r")
+
 matrix = pickle.load(fileStream)
+
 fileStream.close()
 
 #--------------------------
@@ -85,6 +96,10 @@ ret_scene, scene_image = cap_scene.read()
 
 roibarFlag = True
 grabFlag = False
+
+record = RecordVideo(True)
+record.addOutputVideo("Output/exercise_2_2_1_scene.mp4", ) 
+
 while(True):
 	# Capture frame-by-frame
 	if grabFlag:
@@ -160,15 +175,20 @@ while(True):
 		
 				# deskew the image center its extent
 				thresh = dataset.deskew(thresh, 20)
-				thresh = dataset.center_extent(thresh, (20, 20))
-		
+				thresh = dataset.center_extent(thresh, (20, 20))			
 				#<------------------------------------------------------------>
 				#<---------- Describe HOG features and Classify Digit -------->
 				#<------------------------------------------------------------>				
 				# extract features from the image and classify it
-				features = hog.describe(thresh)
-				features = features.reshape(1, -1)#reshape for prediction
-				prediction = model.predict(features)
+				
+				# For hog/SVM classification
+				#features = hog.describe(thresh)
+				#features = features.reshape(1, -1)#reshape for prediction
+				
+				# For DBN classification
+				image = cv2.resize(thresh, (28, 28), interpolation=cv2.INTER_LINEAR)
+				image = image.flatten()/255.0		
+				prediction = model.predict(np.atleast_2d(image))
 				prediction = str(prediction[0])
 				
 				#if it's not predicting 1, and we do not have a lot of bright pixels, throw away
@@ -199,8 +219,8 @@ while(True):
 		cv2.imshow("Full Eye Frame", result)
 	if grabFlag:
 		cv2.imshow("Cropped Eye Frame", cropped_frame)
-		cv2.imshow("Full Eye Frame", eye_image)
-	cv2.imshow("Detected Digits", scene_image)
+		cv2.imshow("Full Eye Frame", eye_image)		
+	cv2.imshow("Detected Digits", scene_image)		
 	cv2.waitKey(1)
 	
 # When everything done, release the capture
