@@ -98,7 +98,8 @@ roibarFlag = True
 grabFlag = False
 
 record = RecordVideo(True)
-record.addOutputVideo("Output/exercise_2_2_1_scene.mp4", ) 
+record.addOutputVideo("Output/exercise_2_2_1_scene.mp4") 
+record.startThread()
 
 while(True):
 	# Capture frame-by-frame
@@ -201,19 +202,23 @@ while(True):
 						continue
 					
 				#save the contour and its values if its the closest to the gaze point
-				dist = distance.euclidean((x + 0.5 * w, y + 0.5 * h), gaze_point[:2])
-				if (dist < gazeDistance):
-					gazeDistance = dist
-					gazePrediction = prediction
-					boxx = x
-					boxy = y
-					boxh = h
-					boxw = w
+				#dist = distance.euclidean((x + 0.5 * w, y + 0.5 * h), gaze_point[:2])
+				#if (dist < gazeDistance):
+				#	gazeDistance = dist
+				#	gazePrediction = prediction
+				#	boxx = x
+				#	boxy = y
+				#	boxh = h
+				#	boxw = w
+				cv2.rectangle(scene_image, (x,y), (x+w, y+h), (0,0,255))#draw the rect
+				cv2.putText(scene_image, prediction, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))#draw text on image
 				
 		# draw a rectangle around the digit, the show what the digit was classified as
-		cv2.rectangle(scene_image, (boxx,boxy), (boxx+boxw, boxy+boxh), (0,0,255))#draw the rect
-		cv2.putText(scene_image, gazePrediction, (boxx,boxy), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))#draw text on image
-		cv2.circle(scene_image, (int(gaze_point[0]), int(gaze_point[1])), 15, (255, 0, 0), -1)
+		cv2.rectangle(scene_image, (x,y), (x+w, y+h), (0,0,255))#draw the rect
+		cv2.putText(scene_image, prediction, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))#draw text on image
+		#cv2.circle(scene_image, (int(gaze_point[0]), int(gaze_point[1])), 15, (255, 0, 0), -1)
+		
+		record.writeFrames(scene_image)
 		
 	if not grabFlag:
 		cv2.imshow("Full Eye Frame", result)
@@ -224,6 +229,7 @@ while(True):
 	cv2.waitKey(1)
 	
 # When everything done, release the capture
+record.stopThread()
 cap_eye.release()
 cap_scene.release()
 cv2.destroyAllWindows()
