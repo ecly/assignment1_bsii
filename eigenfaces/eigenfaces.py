@@ -3,17 +3,20 @@
 
 # import the necessary packages
 from __future__ import print_function
-from FaceRecognition.face_recognition.datasets import load_caltech_faces
-from FaceRecognition import ResultsMontage
+
+import argparse
+
+import imutils
+import matplotlib.pyplot as plt
+import numpy as np
+from skimage import exposure
 from sklearn.decomposition import RandomizedPCA
 from sklearn.metrics import classification_report
 from sklearn.svm import SVC
-from skimage import exposure
-import matplotlib.pyplot as plt 
-import numpy as np
-import argparse
-import imutils
+
 import cv2
+from FaceRecognition import ResultsMontage
+from FaceRecognition.face_recognition.datasets import load_caltech_faces
 
 # construct the argument parse and parse command line arguments
 ap = argparse.ArgumentParser()
@@ -21,7 +24,7 @@ ap.add_argument("-d", "--dataset", required=True, help="path to CALTECH Faces da
 ap.add_argument("-n", "--num-components", type=int, default=150, help="# of principal components")
 ap.add_argument("-s", "--sample-size", type=int, default=20, help="# of example samples")
 ap.add_argument("-v", "--visualize", type=int, default=-1,
-	help="whether or not PCA components should be visualized")
+			    help="whether or not PCA components should be visualized")
 args = vars(ap.parse_args())
 
 # load the CALTECH faces dataset
@@ -45,10 +48,10 @@ plt.show()
 # check to see if the PCA components should be visualized
 if args["visualize"] > 0:
 	# initialize the montage for the components
-	montage = ResultsMontage((62, 47), 4, 16)
+	montage = ResultsMontage((62, 47), 5, 5)
 
 	# loop over the first 16 individual components
-	for (i, component) in enumerate(pca.components_[:16]):
+	for (i, component) in enumerate(pca.components_[:5]):
 		# reshape the component to a 2D matrix, then convert the data type to an unsigned
 		# 8-bit integer so it can be displayed with OpenCV
 		component = component.reshape((62, 47))
@@ -74,18 +77,21 @@ print("[INFO] evaluating model...")
 predictions = model.predict(pca.transform(testing.data))
 print(classification_report(testing.target, predictions))
 
-# loop over the the desired number of samples
+# Loop over the the desired number of samples
+classifiedMontage = ResultsMontage((62, 47), 5, args["sample_size"])
 for i in np.random.randint(0, high=len(testing.data), size=(args["sample_size"],)):
-	# grab the face and classify it
-	#<!--------------------------------------------------------------------------->
-	#<!--                            YOUR CODE HERE                             -->
-	#<!--------------------------------------------------------------------------->
-    
-    
-    
-    
-	#<!--------------------------------------------------------------------------->
-	#<!--                                                                       -->
-	#<!--------------------------------------------------------------------------->
-	
-	cv2.waitKey(0)
+	#Predict image using the trained model
+	prediction = model.predict(pca.transform(testing.data[i]))
+	number = int(filter(str.isdigit, str(prediction)))#Extract number
+
+	#Reshape the image for visualization
+	image = testing.data[i].reshape((62, 47))
+	image = exposure.rescale_intensity(image, out_range=(0, 255)).astype("uint8")
+	image = np.dstack([image] * 3)
+
+    #Draw the label and add to montage
+	cv2.putText(image, str(number), (0, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255))#draw text on image
+	classifiedMontage.addResult(image)
+
+cv2.imshow("Prediction montage", classifiedMontage.montage)
+cv2.waitKey(0)
