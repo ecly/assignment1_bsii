@@ -23,6 +23,8 @@ import cv2
 import numpy as np
 
 from collections import deque
+from RecordVideo import RecordVideo
+import time
 
 from CaptureVideo.CaptureVideo import CaptureVideo
 
@@ -114,6 +116,14 @@ imageSize    = (0, 0)
 map1 = []
 map2 = []
 
+record = RecordVideo(True)
+record.addOutputVideo("video02.m4v", size=(640, 480),
+                      framerate=30., isColor=True)
+
+# Start the record thread.
+record.startThread()
+
+
 # This repetion will run while there is a new frame in the video file or
 # while the user do not press the "q" (quit) keyboard button.
 while True:
@@ -128,6 +138,7 @@ while True:
     imageSize = frames[0].shape[::-1][1:3]
 
     # Find the pattern in both images.
+    record.writeFrames(frames[1])
     left  = findChessboardCorners(frames[0])
     right = findChessboardCorners(frames[1])
 
@@ -178,9 +189,20 @@ while True:
         map1 = []
         map2 = []
 
+
+    
+    
     # Display the resulting frame.
     cv2.imshow("Stereo", stereo)
+    
+    
 
+record.stopThread()
+while record.IsRunning:
+    time.sleep(1)
+
+    
 # When everything done, release the capture object.
 del capture
+del record
 cv2.destroyAllWindows()
