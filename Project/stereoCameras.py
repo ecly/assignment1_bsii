@@ -77,9 +77,16 @@ def calibrate(leftCorners, rightCorners, objectPoints):
     #<!--------------------------------------------------------------------------->
     #<!--                            YOUR CODE HERE                             -->
     #<!--------------------------------------------------------------------------->
-
-
-
+    _, mtx1, dist1, _, _ = cv2.calibrateCamera(objectPoints, leftCorners, imageSize, None, None)
+    _, mtx2, dist2, _, _ = cv2.calibrateCamera(objectPoints, rightCorners, imageSize, None, None)
+    
+    _, mtx1, dist1, mtx2, dist2, R, T, E, F =cv2.stereoCalibrate(objectPoints, leftCorners, rightCorners, mtx1, dist1, mtx2, dist2, imageSize)
+    skew = crossProductMatrix(T)
+    essential = skew * R
+    
+    r1, r2, p1, p2, q, validPix1, validPix2,  = cv2.stereoRectify(mtx1, dist1, mtx2, dist2, imageSize, R, T)
+    map1 = cv2.initUndistortRectifyMap(mtx1, dist1, r1, p1, imageSize, cv2.CV_32FC1)
+    map2 = cv2.initUndistortRectifyMap(mtx2, dist2, r2, p2, imageSize, cv2.CV_32FC1)
     #<!--------------------------------------------------------------------------->
     #<!--                                                                       -->
     #<!--------------------------------------------------------------------------->
@@ -89,9 +96,15 @@ def crossProductMatrix(t):
     #<!--------------------------------------------------------------------------->
     #<!--                            YOUR CODE HERE                             -->
     #<!--------------------------------------------------------------------------->
-
-
-
+    #Calculate skew matrix as seen in [SO]
+    t1 = t[0][0]
+    t2 = t[1][0]
+    t3 = t[2][0]
+    skew = np.array([[0 , -t3,   t2],
+                    [t3 ,   0,  -t1],
+                    [-t2,  t1,    0]])
+    
+    return skew
     #<!--------------------------------------------------------------------------->
     #<!--                                                                       -->
     #<!--------------------------------------------------------------------------->
@@ -101,8 +114,8 @@ def crossProductMatrix(t):
 # Tips: You can add a new video capture device or video file with the method
 # CaptureVideo.addInputVideo().
 capture = CaptureVideo(isDebugging=True)
-capture.addInputVideo(0, size=(640, 480), framerate=30.)
-capture.addInputVideo(1, size=(640, 480), framerate=30.)
+capture.addInputVideo("video01.m4v", size=(640, 480), framerate=5.)
+capture.addInputVideo("video02.m4v", size=(640, 480), framerate=5.)
 
 # Creates a window to show the stereo images.
 cv2.namedWindow("Stereo", cv2.WINDOW_AUTOSIZE)
@@ -115,14 +128,6 @@ objectPoints = []
 imageSize    = (0, 0)
 map1 = []
 map2 = []
-
-record = RecordVideo(True)
-record.addOutputVideo("video02.m4v", size=(640, 480),
-                      framerate=30., isColor=True)
-
-# Start the record thread.
-record.startThread()
-
 
 # This repetion will run while there is a new frame in the video file or
 # while the user do not press the "q" (quit) keyboard button.
@@ -138,7 +143,6 @@ while True:
     imageSize = frames[0].shape[::-1][1:3]
 
     # Find the pattern in both images.
-    record.writeFrames(frames[1])
     left  = findChessboardCorners(frames[0])
     right = findChessboardCorners(frames[1])
 
@@ -195,14 +199,7 @@ while True:
     # Display the resulting frame.
     cv2.imshow("Stereo", stereo)
     
-    
 
-record.stopThread()
-while record.IsRunning:
-    time.sleep(1)
-
-    
 # When everything done, release the capture object.
 del capture
-del record
 cv2.destroyAllWindows()
