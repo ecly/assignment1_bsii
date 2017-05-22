@@ -146,8 +146,9 @@ while True:
         break
 
     # Get the image size.
+    
     imageSize = frames[0].shape[::-1][1:3]
-
+    
     # Find the pattern in both images.
     left = findChessboardCorners(frames[0])
     right = findChessboardCorners(frames[1])

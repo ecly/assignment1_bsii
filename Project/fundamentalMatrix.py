@@ -68,6 +68,8 @@ def addNewPoint(point):
     if size + 1 == queue.maxlen:
         fundamentalMatrix()
 
+
+
 def fundamentalMatrix():
     # Global variables.
     global F
@@ -78,9 +80,52 @@ def fundamentalMatrix():
     #<!--------------------------------------------------------------------------->
     #<!--                            YOUR CODE HERE                             -->
     #<!--------------------------------------------------------------------------->
-
-
-
+    
+    def calcEpilines(F,point):
+        return F.dot(point)              
+    
+    def plot_epipolar_lines(offset,lines,color):
+        
+        _,imageWidth,_ = frames[0].shape
+    
+        for line in lines:
+            
+            # Start point
+            x0 = 0 + offset
+            y0 = int(-line[2]/line[1])
+        
+            # End point
+            x1 = imageWidth + offset
+            y1 = int((line[2] + line[0] * imageWidth) / -line[1])
+             
+            # Draw the line   
+            cv2.line(stereo, (x0,y0), (x1,y1), color,1) 
+    
+        
+    pts1 = points[0:][::2]
+    pts2 = points[1:][::2]
+  
+    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_8POINT)
+    
+    lines1  = deque()
+    lines2  = deque()
+    
+    for point in pts1:
+        epiLine = calcEpilines(F, point)
+        lines2.append(epiLine)
+    
+    for point in pts2:
+        epiLine = calcEpilines(F.transpose(), point)
+        lines1.append(epiLine)     
+        
+    lines1 = np.asarray(lines1)   
+    lines2 = np.asarray(lines2)    
+    
+    plot_epipolar_lines(640, lines2, (255,0,0))
+    plot_epipolar_lines(0, lines1, (0,0,255))
+    
+  
+  
     #<!--------------------------------------------------------------------------->
     #<!--                                                                       -->
     #<!--------------------------------------------------------------------------->
