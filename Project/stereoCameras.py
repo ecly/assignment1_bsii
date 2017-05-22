@@ -22,6 +22,8 @@ __version__ = "$Revision: 2017042501 $"
 import cv2
 import numpy as np
 
+from sklearn.preprocessing import normalize
+
 from collections import deque
 from RecordVideo import RecordVideo
 import time
@@ -80,11 +82,17 @@ def calibrate(leftCorners, rightCorners, objectPoints):
     _, mtx1, dist1, _, _ = cv2.calibrateCamera(objectPoints, leftCorners, imageSize, None, None)
     _, mtx2, dist2, _, _ = cv2.calibrateCamera(objectPoints, rightCorners, imageSize, None, None)
     
-    _, mtx1, dist1, mtx2, dist2, R, T, E, F =cv2.stereoCalibrate(objectPoints, leftCorners, rightCorners, mtx1, dist1, mtx2, dist2, imageSize)
+    _, mtx1, dist1, mtx2, dist2, R, T, E, F = cv2.stereoCalibrate(objectPoints, leftCorners, rightCorners, mtx1, dist1, mtx2, dist2, imageSize)
     skew = crossProductMatrix(T)
-    essential = skew * R
+    e = skew.dot(R)
+    k1 = mtx1 / mtx1[2,2]
+    k2 = mtx2 / mtx2[2,2]
+    m1_inv = np.linalg.inv(k1)
+    m2_inv = np.linalg.inv(k2)
+    normalizedF = F / F[2,2]
+    fundamental = (m2_inv.T).dot(e).dot(m1_inv)
     
-    r1, r2, p1, p2, q, validPix1, validPix2,  = cv2.stereoRectify(mtx1, dist1, mtx2, dist2, imageSize, R, T)
+    r1, r2, p1, p2, q, validPix1, validPix2 = cv2.stereoRectify(mtx1, dist1, mtx2, dist2, imageSize, R, T)
     map1 = cv2.initUndistortRectifyMap(mtx1, dist1, r1, p1, imageSize, cv2.CV_32FC1)
     map2 = cv2.initUndistortRectifyMap(mtx2, dist2, r2, p2, imageSize, cv2.CV_32FC1)
     #<!--------------------------------------------------------------------------->
@@ -100,9 +108,7 @@ def crossProductMatrix(t):
     t1 = t[0][0]
     t2 = t[1][0]
     t3 = t[2][0]
-    skew = np.array([[0 , -t3,   t2],
-                    [t3 ,   0,  -t1],
-                    [-t2,  t1,    0]])
+    skew = np.mat([[0,-t3,t2],[t3,0,-t1],[-t2,t1,0]])
     
     return skew
     #<!--------------------------------------------------------------------------->
@@ -122,10 +128,10 @@ cv2.namedWindow("Stereo", cv2.WINDOW_AUTOSIZE)
 print "WARNING: When the chessboard will be detected, press \"S\" in your keyboard.\n"
 
 # Global variables.
-leftCorners  = []
+leftCorners = []
 rightCorners = []
 objectPoints = []
-imageSize    = (0, 0)
+imageSize = (0, 0)
 map1 = []
 map2 = []
 
@@ -143,14 +149,14 @@ while True:
     imageSize = frames[0].shape[::-1][1:3]
 
     # Find the pattern in both images.
-    left  = findChessboardCorners(frames[0])
+    left = findChessboardCorners(frames[0])
     right = findChessboardCorners(frames[1])
 
     # Create the stereo image.
     stereo = np.hstack((frames[0], frames[1]))
 
     # Undistorted image.
-    if (len(map1) == 2):
+    if len(map1) == 2:
         left = cv2.remap(frames[0], map1[0], map1[1], cv2.INTER_LINEAR)
         right = cv2.remap(frames[1], map2[0], map2[1], cv2.INTER_LINEAR)
         undistorted = np.hstack((left, right))
@@ -175,30 +181,27 @@ while True:
             print "Detected Chessboard: %02d of 15." % (size)
             if size == 5:
                 calibrate(leftCorners, rightCorners, objectPoints)
-                leftCorners  = []
+                leftCorners = []
                 rightCorners = []
                 objectPoints = []
 
     # Letter "w" key.
     elif key == ord("w"):
-        if (len(map1) == 2):
+        if len(map1) == 2:
             cv2.imwrite("left.jpg", left)
             cv2.imwrite("right.jpg", right)
 
     # Letter "c" key.
     elif key == ord("c"):
-        leftCorners  = []
+        leftCorners = []
         rightCorners = []
         objectPoints = []
         map1 = []
         map2 = []
 
 
-    
-    
     # Display the resulting frame.
     cv2.imshow("Stereo", stereo)
-    
 
 # When everything done, release the capture object.
 del capture
