@@ -22,7 +22,6 @@ __version__ = "$Revision: 2017042501 $"
 import cv2
 import numpy as np
 
-from sklearn.preprocessing import normalize
 
 from collections import deque
 from RecordVideo import RecordVideo
@@ -87,10 +86,10 @@ def calibrate(leftCorners, rightCorners, objectPoints):
     e = skew.dot(R)
     k1 = mtx1 / mtx1[2,2]
     k2 = mtx2 / mtx2[2,2]
-    m1_inv = np.linalg.inv(k1)
-    m2_inv = np.linalg.inv(k2)
+    m1_inv = np.linalg.inv(mtx1)
+    m2_inv = np.linalg.inv(mtx1).T
     normalizedF = F / F[2,2]
-    fundamental = (m2_inv.T).dot(e).dot(m1_inv)
+    fundamental = m2_inv.dot(e).dot(m1_inv)
     
     r1, r2, p1, p2, q, validPix1, validPix2 = cv2.stereoRectify(mtx1, dist1, mtx2, dist2, imageSize, R, T)
     map1 = cv2.initUndistortRectifyMap(mtx1, dist1, r1, p1, imageSize, cv2.CV_32FC1)
@@ -120,8 +119,8 @@ def crossProductMatrix(t):
 # Tips: You can add a new video capture device or video file with the method
 # CaptureVideo.addInputVideo().
 capture = CaptureVideo(isDebugging=True)
-capture.addInputVideo("video01.m4v", size=(640, 480), framerate=5.)
-capture.addInputVideo("video02.m4v", size=(640, 480), framerate=5.)
+capture.addInputVideo(0, size=(640, 480), framerate=5.)
+capture.addInputVideo(1, size=(640, 480), framerate=5.)
 
 # Creates a window to show the stereo images.
 cv2.namedWindow("Stereo", cv2.WINDOW_AUTOSIZE)
